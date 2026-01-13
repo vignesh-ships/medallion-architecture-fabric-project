@@ -1,0 +1,95 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "azure_sql_connection": {
+        "type": "string",
+        "description": "Connection to Azure SQL Database (AdventureWorksLT)"
+      },
+      "bronze_lakehouse": {
+        "type": "string",
+        "description": "Bronze lakehouse artifact ID"
+      }
+    },
+    "resources": [{
+      "name": "pipeline_bronze_ingest",
+      "type": "pipelines",
+      "apiVersion": "2018-06-01",
+      "properties": {
+        "activities": [{
+          "name": "foreach_table_ingestion",
+          "type": "ForEach",
+          "typeProperties": {
+            "items": {
+              "value": "@pipeline().parameters.table_list",
+              "type": "Expression"
+            },
+            "batchCount": 5,
+            "isSequential": false,
+            "activities": [{
+              "name": "copy_table_to_bronze",
+              "type": "Copy",
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30
+              },
+              "typeProperties": {
+                "source": {
+                  "type": "AzureSqlSource",
+                  "queryTimeout": "02:00:00",
+                  "datasetSettings": {
+                    "type": "AzureSqlTable",
+                    "typeProperties": {
+                      "schema": "SalesLT",
+                      "table": "@item()",
+                      "database": "AdventureWorksLT"
+                    }
+                  }
+                },
+                "sink": {
+                  "type": "ParquetSink",
+                  "formatSettings": {
+                    "type": "ParquetWriteSettings"
+                  },
+                  "datasetSettings": {
+                    "type": "Parquet",
+                    "typeProperties": {
+                      "location": {
+                        "type": "LakehouseLocation",
+                        "fileName": "@item()",
+                        "folderPath": "@item()"
+                      },
+                      "compressionCodec": "snappy"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "notebook_silver_transform",
+              "type": "TridentNotebook",
+              "dependsOn": [{
+                "activity": "copy_table_to_bronze",
+                "dependencyConditions": ["Succeeded"]
+              }],
+              "typeProperties": {
+                "parameters": {
+                  "table_name": {
+                    "value": "@item()",
+                    "type": "string"
+                  }
+                }
+              }
+            }]
+          }
+        }],
+        "parameters": {
+          "table_list": {
+            "type": "array",
+            "defaultValue": ["Customer", "Product", "ProductCategory", "SalesOrderHeader", "SalesOrderDetail"]
+          }
+        }
+      }
+    }]
+  }
