@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: "Customer dimension with demographic information"
+    columns:
+      - name: customer_key
+        description: "Surrogate key"
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Business key from source system"
+        tests:
+          - unique
+          - not_null
+      - name: email_address
+        description: "Customer email (lowercase standardized)"
+        tests:
+          - not_null
+
+  - name: dim_product
+    description: "Product dimension with category hierarchy"
+    columns:
+      - name: product_key
+        description: "Surrogate key"
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Business key from source system"
+        tests:
+          - unique
+          - not_null
+      - name: list_price
+        description: "Product list price"
+        tests:
+          - not_null
+
+  - name: dim_date
+    description: "Date dimension (2008-2010)"
+    columns:
+      - name: date_key
+        description: "Surrogate key in YYYYMMDD format"
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Actual date value"
+        tests:
+          - unique
+          - not_null
+
+  - name: fact_sales
+    description: "Sales fact table at order line item grain"
+    columns:
+      - name: sales_key
+        description: "Surrogate key"
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: "Foreign key to dim_customer"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customer')
+              field: customer_key
+      - name: product_key
+        description: "Foreign key to dim_product"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_product')
+              field: product_key
+      - name: order_date_key
+        description: "Foreign key to dim_date"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: order_qty
+        description: "Quantity ordered"
+        tests:
+          - not_null
+      - name: line_total
+        description: "Extended amount"
+        tests:
+          - not_null

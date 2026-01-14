@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: silver_lakehouse
+    description: "Silver layer Delta tables from Fabric lakehouse"
+    database: silver_lakehouse
+    schema: dbo
+    tables:
+      - name: customer_silver
+        description: "Cleaned customer data"
+        columns:
+          - name: CustomerID
+            description: "Unique customer identifier"
+            tests:
+              - unique
+              - not_null
+
+      - name: product_silver
+        description: "Product catalog data"
+        columns:
+          - name: ProductID
+            tests:
+              - unique
+              - not_null
+
+      - name: productcategory_silver
+        description: "Product category hierarchy"
+        columns:
+          - name: ProductCategoryID
+            tests:
+              - unique
+              - not_null
+
+      - name: salesorderheader_silver
+        description: "Order header information"
+        columns:
+          - name: SalesOrderID
+            tests:
+              - unique
+              - not_null
+
+      - name: salesorderdetail_silver
+        description: "Order line item details"
+        columns:
+          - name: SalesOrderDetailID
+            tests:
+              - unique
+              - not_null

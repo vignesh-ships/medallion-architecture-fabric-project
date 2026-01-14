@@ -1,0 +1,72 @@
+# ============================================
+# Fabric Medallion Architecture - .gitignore
+# ============================================
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+.eggs/
+*.egg
+
+# ===== dbt =====
+target/
+dbt_packages/
+logs/
+*.log
+.user.yml
+profiles.yml
+
+# ===== Databricks (if used) =====
+.databricks/
+*.databricks
+
+# ===== Notebooks =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== Credentials & Secrets =====
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+secrets.yaml
+.env
+.env.local
+
+# ===== Azure CLI =====
+.azure/
+
+# ===== IDEs =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ===== Temporary files =====
+*.tmp
+*.bak
+*.cache
+Thumbs.db
+
+# ===== OS =====
+.DS_Store
+desktop.ini
+
+# ===== Project-specific =====
+generate_dates.py
+*_temp.sql
+*_backup/
+
+# ===== Fabric workspace IDs (CRITICAL) =====
+# Never commit actual workspace/lakehouse IDs
+# Use placeholders like [WORKSPACE_ID] in committed files
