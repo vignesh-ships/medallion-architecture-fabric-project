@@ -234,12 +234,6 @@ This project demonstrates proficiency in:
 
 ---
 
-## 🤝 Contributing
-
-This is a personal learning project. Feedback and suggestions welcome via issues!
-
----
-
 ## 📄 License
 
 MIT License - Feel free to use this project structure for your own learning!
