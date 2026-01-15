@@ -214,19 +214,6 @@ If failure occurs:
 
 ---
 
-## Export Pipeline Definition
-
-### Save to Git
-```
-1. Pipeline canvas → ... (More) → View JSON
-2. Copy JSON content
-3. Save to: 03-bronze-layer/pipelines/pipeline_bronze_ingest.json
-```
-
-**Note:** JSON may contain workspace-specific IDs - sanitize before committing
-
----
-
 ## Scheduling (Optional)
 
 ### Add Trigger

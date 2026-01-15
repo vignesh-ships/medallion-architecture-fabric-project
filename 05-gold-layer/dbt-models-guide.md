@@ -351,42 +351,54 @@ INNER JOIN dim_date d ON s.order_date = d.full_date
 
 ---
 
-## Macros
+### dim_date.sql
 
-### macros/generate_date_dimension.sql
-```sql
-{% macro generate_date_dimension(start_date, end_date) %}
+**Note:** dim_date is generated via Python seed instead of SQL model due to Fabric Warehouse limitations (recursive CTEs unsupported).
 
-WITH date_spine AS (
-    -- Generate date series
-    SELECT CAST('{{ start_date }}' AS DATE) AS full_date
-    UNION ALL
-    SELECT DATEADD(DAY, 1, full_date)
-    FROM date_spine
-    WHERE full_date < CAST('{{ end_date }}' AS DATE)
-)
+**Generation method:**
+```python
+# generate_dates.py (executed once, output committed as seed)
+import pandas as pd
+from datetime import datetime
 
-SELECT
-    -- date_key in YYYYMMDD format
-    CAST(FORMAT(full_date, 'yyyyMMdd') AS INT) AS date_key,
-    full_date,
-    YEAR(full_date) AS year,
-    DATEPART(QUARTER, full_date) AS quarter,
-    MONTH(full_date) AS month,
-    DATENAME(MONTH, full_date) AS month_name,
-    DATEPART(WEEK, full_date) AS week_of_year,
-    DAY(full_date) AS day_of_month,
-    DATEPART(WEEKDAY, full_date) AS day_of_week,
-    DATENAME(WEEKDAY, full_date) AS day_name,
-    CASE 
-        WHEN DATEPART(WEEKDAY, full_date) IN (1, 7) THEN 1 
-        ELSE 0 
-    END AS is_weekend
-FROM date_spine
-OPTION (MAXRECURSION 0)
+start = datetime(2008, 1, 1)
+end = datetime(2010, 12, 31)
+dates = pd.date_range(start, end, freq='D')
 
-{% endmacro %}
+df = pd.DataFrame({
+    'date_key': dates.strftime('%Y%m%d').astype(int),
+    'full_date': dates.date,
+    'year': dates.year,
+    'quarter': dates.quarter,
+    'month': dates.month,
+    'month_name': dates.strftime('%B'),
+    'week_of_year': dates.isocalendar().week,
+    'day_of_month': dates.day,
+    'day_of_week': dates.dayofweek + 1,
+    'day_name': dates.strftime('%A'),
+    'is_weekend': (dates.dayofweek >= 5).astype(int)
+})
+
+df.to_csv('seeds/dim_date.csv', index=False)
 ```
+
+**Seed loaded via:**
+```bash
+dbt seed  # Loads seeds/dim_date.csv into dbo.dim_date table
+```
+
+**Why seed instead of model:**
+- ✅ Fabric Warehouse doesn't support recursive CTEs
+- ✅ Date dimension is static (regenerated only when date range changes)
+- ✅ Seed approach is standard for reference data
+- ✅ CSV committed to Git for reproducibility
+
+**Alternative considered:**
+- Macro with recursive CTE - Failed (Synapse SQL limitation)
+- VALUES clause with UNION ALL - Too verbose for 1,096 rows
+- External table from CSV - Unnecessary complexity
+
+---
 
 ---
 

@@ -291,23 +291,6 @@ spark.sql(f"OPTIMIZE {silver_table_name} ZORDER BY (CustomerID)")
 
 ---
 
-## Export Notebook
-
-### Save to Git
-```
-1. Notebook → Export → Download .ipynb
-2. Save to: 04-silver-layer/notebooks/nb_silver_transformation.ipynb
-3. Sanitize: Remove workspace IDs, paths (replace with placeholders)
-```
-
-**Placeholder pattern:**
-```python
-# Before Git commit
-bronze_base = "abfss://[WORKSPACE_ID]@onelake.dfs.fabric.microsoft.com/[BRONZE_LAKEHOUSE_ID]/Files"
-```
-
----
-
 ## Verification Checklist
 - [x] Notebook created with correct name
 - [x] silver_lakehouse attached
