@@ -259,18 +259,51 @@ LEFT JOIN parent_category c ON p.category_id = c.category_id
 ---
 
 ### dim_date.sql
-```sql
-{{ config(
-    materialized='table',
-    schema='dbo'
-) }}
 
--- Generate date dimension using macro
-{{ generate_date_dimension(
-    start_date='2008-01-01',
-    end_date='2010-12-31'
-) }}
+**Note:** dim_date is generated via Python seed instead of SQL model due to Fabric Warehouse limitations (recursive CTEs unsupported).
+
+**Generation method:**
+```python
+# generate_dates.py (executed once, output committed as seed)
+import pandas as pd
+from datetime import datetime
+
+start = datetime(2008, 1, 1)
+end = datetime(2010, 12, 31)
+dates = pd.date_range(start, end, freq='D')
+
+df = pd.DataFrame({
+    'date_key': dates.strftime('%Y%m%d').astype(int),
+    'full_date': dates.date,
+    'year': dates.year,
+    'quarter': dates.quarter,
+    'month': dates.month,
+    'month_name': dates.strftime('%B'),
+    'week_of_year': dates.isocalendar().week,
+    'day_of_month': dates.day,
+    'day_of_week': dates.dayofweek + 1,
+    'day_name': dates.strftime('%A'),
+    'is_weekend': (dates.dayofweek >= 5).astype(int)
+})
+
+df.to_csv('seeds/dim_date.csv', index=False)
 ```
+
+**Seed loaded via:**
+```bash
+dbt seed  # Loads seeds/dim_date.csv into dbo.dim_date table
+```
+
+**Why seed instead of model:**
+- ✅ Fabric Warehouse doesn't support recursive CTEs
+- ✅ Date dimension is static (regenerated only when date range changes)
+- ✅ Seed approach is standard for reference data
+- ✅ CSV committed to Git for reproducibility
+
+**Alternative considered:**
+- Macro with recursive CTE - Failed (Synapse SQL limitation)
+- VALUES clause with UNION ALL - Too verbose for 1,096 rows
+- External table from CSV - Unnecessary complexity
 
 ---
 
@@ -348,57 +381,6 @@ INNER JOIN dim_customer c ON s.customer_id = c.customer_id
 INNER JOIN dim_product p ON s.product_id = p.product_id
 INNER JOIN dim_date d ON s.order_date = d.full_date
 ```
-
----
-
-### dim_date.sql
-
-**Note:** dim_date is generated via Python seed instead of SQL model due to Fabric Warehouse limitations (recursive CTEs unsupported).
-
-**Generation method:**
-```python
-# generate_dates.py (executed once, output committed as seed)
-import pandas as pd
-from datetime import datetime
-
-start = datetime(2008, 1, 1)
-end = datetime(2010, 12, 31)
-dates = pd.date_range(start, end, freq='D')
-
-df = pd.DataFrame({
-    'date_key': dates.strftime('%Y%m%d').astype(int),
-    'full_date': dates.date,
-    'year': dates.year,
-    'quarter': dates.quarter,
-    'month': dates.month,
-    'month_name': dates.strftime('%B'),
-    'week_of_year': dates.isocalendar().week,
-    'day_of_month': dates.day,
-    'day_of_week': dates.dayofweek + 1,
-    'day_name': dates.strftime('%A'),
-    'is_weekend': (dates.dayofweek >= 5).astype(int)
-})
-
-df.to_csv('seeds/dim_date.csv', index=False)
-```
-
-**Seed loaded via:**
-```bash
-dbt seed  # Loads seeds/dim_date.csv into dbo.dim_date table
-```
-
-**Why seed instead of model:**
-- ✅ Fabric Warehouse doesn't support recursive CTEs
-- ✅ Date dimension is static (regenerated only when date range changes)
-- ✅ Seed approach is standard for reference data
-- ✅ CSV committed to Git for reproducibility
-
-**Alternative considered:**
-- Macro with recursive CTE - Failed (Synapse SQL limitation)
-- VALUES clause with UNION ALL - Too verbose for 1,096 rows
-- External table from CSV - Unnecessary complexity
-
----
 
 ---
 
